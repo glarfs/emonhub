@@ -361,3 +361,124 @@ Raise this when init fails.
 
 class EmonHubReporterInitError(Exception):
     pass
+
+
+class EmonHubThingsSpeakReporter(EmonHubReporter):
+
+    def __init__(self, reporterName, queue, **kwargs):
+        """Initialize reporter
+
+        """
+
+        # Initialization
+        super(EmonHubThingsSpeakReporter, self).__init__(reporterName, queue, **kwargs)
+
+        # add or alter any default settings for this reporter
+        self._defaults.update({'batchsize': 100})
+        self._cms_settings = {'node':"",apikey': "", 'url': 'https://api.thingspeak.com'}
+
+        # This line will stop the default values printing to logfile at start-up
+        self._settings.update(self._defaults)
+
+        # set an absolute upper limit for number of items to process per post
+        self._item_limit = 250
+
+    def set(self, **kwargs):
+        """
+
+        :param kwargs:
+        :return:
+        """
+
+        super (EmonHubThingsSpeakReporter, self).set(**kwargs)
+
+        for key, setting in self._cms_settings.iteritems():
+            #valid = False
+            if not key in kwargs.keys():
+                setting = self._cms_settings[key]
+            else:
+                setting = kwargs[key]
+            if key in self._settings and self._settings[key] == setting:
+                continue
+            elif key == 'apikey':
+                if str.lower(setting[:4]) == 'xxxx':
+                    self._log.warning("Setting " + self.name + " apikey: obscured")
+                    pass
+                elif str.__len__(setting) == 32 :
+                    self._log.info("Setting " + self.name + " apikey: set")
+                    pass
+                elif setting == "":
+                    self._log.info("Setting " + self.name + " apikey: null")
+                    pass
+                else:
+                    self._log.warning("Setting " + self.name + " apikey: invalid format")
+                    continue
+                self._settings[key] = setting
+                # Next line will log apikey if uncommented (privacy ?)
+                #self._log.debug(self.name + " apikey: " + str(setting))
+                continue
+            elif key == 'url' and setting[:4] == "http":
+                self._log.info("Setting " + self.name + " url: " + setting)
+                self._settings[key] = setting
+                continue
+            else:
+                self._log.warning("'%s' is not valid for %s: %s" % (setting, self.name, key))
+
+    def _process_post(self, databuffer):
+        """Send data to server."""
+        
+        # databuffer is of format:
+        # [[timestamp, nodeid, datavalues][timestamp, nodeid, datavalues]]
+        # [[1399980731, 10, 150, 250 ...]]
+
+        if not 'apikey' in self._settings.keys() or str.__len__(self._settings['apikey']) != 16 \
+                or str.lower(self._settings['apikey']) == 'xxxxxxxxxxxxxxx':
+            return
+        if not 'node' in self._settings.keys() and ! self._settings['node'].isdigit():
+            return            
+
+        data_string = ''
+        filter_node = self._settings['node']
+        send = False
+        for i, val in enumerate(databuffer):
+            for i, data in enumerate(val):                  
+                if i == 0:
+                    data_string='created_at='+str(data)
+                else if i == 1:
+                    current_node = data
+                else:
+                    data_string += 'field'+ str(i-1) + '=' + str(data)
+                data_string += '&'
+            # Remove trailing & and close braces
+            data_string = data_string[0:-1]
+
+            # Prepare URL string of the form
+            # https://api.thingspeak.com/update?key=12345
+            # &created_at=xxxx&field1=0&field2=5&field3=20&..
+    
+            if filter_node == current_node:
+                # time that the request was sent at
+                sentat = int(time.time())
+
+                # Construct post_url (without apikey)
+                post_url = self._settings['url']+'/update'+'?key='
+                post_body = data_string
+            
+                # logged before apikey added for security
+                self._log.info(self.name + " sending: " + post_url + "T-H-I-N-G-S-P-E-A-K-A-P-I-K-E-Y&" + post_body)
+
+                # Add apikey to post_url
+                post_url = post_url + self._settings['apikey']
+            
+                # The Develop branch of emoncms allows for the sending of the apikey in the post
+                # body, this should be moved from the url to the body as soon as this is widely
+                # adopted
+
+                reply = self._send_post(post_url, post_body)
+                if (result.readline() != '0'):
+                    self._log.debug(self.name + " acknowledged receipt with '" + reply + "' from " + self._settings['url'])
+                    send = True
+                else:
+                    self._log.warning(self.name + " send failure: wanted '0' but got '" +reply+ "'")
+        
+        return send
