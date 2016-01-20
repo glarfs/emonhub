@@ -434,7 +434,7 @@ class EmonHubThingsSpeakReporter(EmonHubReporter):
         if not 'apikey' in self._settings.keys() or str.__len__(self._settings['apikey']) != 16 \
                 or str.lower(self._settings['apikey']) == 'xxxxxxxxxxxxxxx':
             return
-        if not 'node' in self._settings.keys() and not self._settings['node'].isdigit():
+        if not 'node' in self._settings.keys() or not self._settings['node'].isdigit():
             return            
 
         data_string = ''
