@@ -375,7 +375,7 @@ class EmonHubThingsSpeakReporter(EmonHubReporter):
 
         # add or alter any default settings for this reporter
         self._defaults.update({'batchsize': 100})
-        self._cms_settings = {'node':"",apikey': "", 'url': 'https://api.thingspeak.com'}
+        self._cms_settings = {'node':"", 'apikey': "", 'url': 'https://api.thingspeak.com'}
 
         # This line will stop the default values printing to logfile at start-up
         self._settings.update(self._defaults)
@@ -434,7 +434,7 @@ class EmonHubThingsSpeakReporter(EmonHubReporter):
         if not 'apikey' in self._settings.keys() or str.__len__(self._settings['apikey']) != 16 \
                 or str.lower(self._settings['apikey']) == 'xxxxxxxxxxxxxxx':
             return
-        if not 'node' in self._settings.keys() and ! self._settings['node'].isdigit():
+        if not 'node' in self._settings.keys() and not self._settings['node'].isdigit():
             return            
 
         data_string = ''
@@ -444,7 +444,7 @@ class EmonHubThingsSpeakReporter(EmonHubReporter):
             for i, data in enumerate(val):                  
                 if i == 0:
                     data_string='created_at='+str(data)
-                else if i == 1:
+                elif i == 1:
                     current_node = data
                 else:
                     data_string += 'field'+ str(i-1) + '=' + str(data)
