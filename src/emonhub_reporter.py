@@ -437,10 +437,10 @@ class EmonHubThingsSpeakReporter(EmonHubReporter):
         if not 'node' in self._settings.keys() or not self._settings['node'].isdigit():
             return            
 
-        data_string = ''
         filter_node = self._settings['node']
         send = False
         for i, val in enumerate(databuffer):
+            data_string = ''
             for i, data in enumerate(val):                  
                 if i == 0:
                     data_string='created_at='+str(data)
