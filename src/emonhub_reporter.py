@@ -362,6 +362,11 @@ Raise this when init fails.
 class EmonHubReporterInitError(Exception):
     pass
 
+"""class EmonHubThingsSpeakReporter
+
+Stores server parameters and buffers the data between two HTTP requests
+
+"""
 
 class EmonHubThingsSpeakReporter(EmonHubReporter):
 
@@ -441,7 +446,7 @@ class EmonHubThingsSpeakReporter(EmonHubReporter):
         if not 'node' in self._settings.keys() or not self._settings['node'].isdigit():
             return            
 
-        filter_node = self._settings['node']
+        filter_node = int(self._settings['node'])
         send = False
         for i, val in enumerate(databuffer):
             data_string = ''
