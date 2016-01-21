@@ -484,7 +484,7 @@ class EmonHubThingsSpeakReporter(EmonHubReporter):
                 # adopted
 
                 reply = self._send_post(post_url, post_body)
-                if (result.readline() != '0'):
+                if (reply != '0'):
                     self._log.debug(self.name + " acknowledged receipt with '" + reply + "' from " + self._settings['url'])
                     send = True
                 else:
