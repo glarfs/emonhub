@@ -374,7 +374,7 @@ class EmonHubThingsSpeakReporter(EmonHubReporter):
         super(EmonHubThingsSpeakReporter, self).__init__(reporterName, queue, **kwargs)
 
         # add or alter any default settings for this reporter
-        self._defaults.update({'batchsize': 100})
+        self._defaults.update({'batchsize': 1})
         self._cms_settings = {'node':"", 'apikey': "", 'url': 'https://api.thingspeak.com'}
 
         # This line will stop the default values printing to logfile at start-up
@@ -404,7 +404,7 @@ class EmonHubThingsSpeakReporter(EmonHubReporter):
                 if str.lower(setting[:4]) == 'xxxx':
                     self._log.warning("Setting " + self.name + " apikey: obscured")
                     pass
-                elif str.__len__(setting) == 32 :
+                elif str.__len__(setting) == 16 :
                     self._log.info("Setting " + self.name + " apikey: set")
                     pass
                 elif setting == "":
@@ -416,6 +416,10 @@ class EmonHubThingsSpeakReporter(EmonHubReporter):
                 self._settings[key] = setting
                 # Next line will log apikey if uncommented (privacy ?)
                 #self._log.debug(self.name + " apikey: " + str(setting))
+                continue
+            elif key == 'node':
+                self._log.info("Setting " + self.name + " node: " + setting)
+                self._settings[key] = setting
                 continue
             elif key == 'url' and setting[:4] == "http":
                 self._log.info("Setting " + self.name + " url: " + setting)
@@ -441,7 +445,7 @@ class EmonHubThingsSpeakReporter(EmonHubReporter):
         send = False
         for i, val in enumerate(databuffer):
             data_string = ''
-            for i, data in enumerate(val):                  
+            for i, data in enumerate(val):        
                 if i == 0:
                     data_string='created_at='+str(data)
                 elif i == 1:
@@ -480,5 +484,5 @@ class EmonHubThingsSpeakReporter(EmonHubReporter):
                     send = True
                 else:
                     self._log.warning(self.name + " send failure: wanted '0' but got '" +reply+ "'")
-        
+                
         return send
